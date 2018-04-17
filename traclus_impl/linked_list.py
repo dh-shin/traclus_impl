@@ -3,7 +3,7 @@ Created on Jan 2, 2016
 
 @author: Alex
 '''
-from compiler.ast import Node
+
 
 
 class LinkedList:

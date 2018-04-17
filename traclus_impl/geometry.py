@@ -57,7 +57,29 @@ class Vec2(object):
     
     def __str__(self):
         return "x: " + str(self.x) + ". y: " + str(self.y)
-    
+    def __add__(self, other):
+        res = Point(0, 0)
+        res.x = self.x + other.x
+        res.y = self.y + other.y
+        return res
+
+    def __sub__(self, other):
+        res = Point(0, 0)
+        res.x = self.x - other.x
+        res.y = self.y - other.y
+        return res
+
+    def __mul__(self, k):
+        res = Point(0, 0)
+        res.x = self.x * k
+        res.y = self.y * k
+        return res
+
+    def __truediv__(self, k):
+        res = Point(0, 0)
+        res.x = self.x / k
+        res.y = self.y / k
+        return res
 def distance(diff_x, diff_y):
     return math.sqrt(diff_x * diff_x + diff_y * diff_y)
 
@@ -95,13 +117,20 @@ class LineSegment(object):
             unit_x = (end.x - start.x) / self.length
             unit_y = (end.y - start.y) / self.length
             self.unit_vector = Point(unit_x, unit_y)
-            
+
+        else:
+            self.unit_vector = Point(_delta, _delta)
+
+
     def as_dict(self):
         return {'start': self.start.as_dict(), 'end': self.end.as_dict()}
         
     def sine_of_angle_with(self, other_line_segment):
-        return self.unit_vector.x * other_line_segment.unit_vector.y - \
-        self.unit_vector.y * other_line_segment.unit_vector.x
+        try:
+            return self.unit_vector.x * other_line_segment.unit_vector.y - \
+            self.unit_vector.y * other_line_segment.unit_vector.x
+        except AttributeError:
+            return 0
         
     def dist_from_start_to_projection_of(self, point):
         diff_x = self.start.x - point.x
@@ -126,5 +155,7 @@ class LineSegment(object):
     
     def __str__(self):
         return "start: " + str(self.start) + ". end: " + str(self.end)
-                
-    
+
+    def cose_of_angle_with(self, other_line_segment):
+        return self.unit_vector.x * other_line_segment.unit_vector.x + \
+               self.unit_vector.y + self.unit_vector.y

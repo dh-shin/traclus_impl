@@ -29,9 +29,9 @@ def call_partition_trajectory(trajectory_point_list):
                               model_cost_func=model_cost, 
                               encoding_cost_func=encoding_cost_func)
         
-    trajectory_line_segs = map(lambda i: LineSegment(trajectory_point_list[i], 
+    trajectory_line_segs = list(map(lambda i: LineSegment(trajectory_point_list[i],
                                                      trajectory_point_list[i + 1]), 
-                               range(0, len(trajectory_point_list) - 1))
+                               range(0, len(trajectory_point_list) - 1)))
     
     return partition_trajectory(trajectory_line_segs=trajectory_line_segs, 
                                 partition_cost_func=partition_cost_func, 

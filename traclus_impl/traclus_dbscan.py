@@ -3,7 +3,7 @@ Created on Dec 31, 2015
 
 @author: Alex
 '''
-from distance_functions import perpendicular_distance, angular_distance, parrallel_distance
+from distance_functions import perpendicular_distance, angular_distance, parrallel_distance, get_total_distance_function
 from generic_dbscan import Cluster, ClusterCandidate, ClusterFactory, ClusterCandidateIndex
 
 class TrajectoryLineSegmentFactory():
@@ -45,9 +45,10 @@ class TrajectoryLineSegment(ClusterCandidate):
     def distance_to_candidate(self, other_candidate):
         if other_candidate == None or other_candidate.line_segment == None or self.line_segment == None:
             raise Exception()
-        return perpendicular_distance(self.line_segment, other_candidate.line_segment) + \
-            angular_distance(self.line_segment, other_candidate.line_segment) + \
-            parrallel_distance(self.line_segment, other_candidate.line_segment)
+        # return perpendicular_distance(self.line_segment, other_candidate.line_segment) + \
+        #     angular_distance(self.line_segment, other_candidate.line_segment) + \
+        #     parrallel_distance(self.line_segment, other_candidate.line_segment)
+        return get_total_distance_function(self.line_segment, other_candidate.line_segment)
             
 class TrajectoryLineSegmentCandidateIndex(ClusterCandidateIndex):
     def __init__(self, candidates, epsilon):

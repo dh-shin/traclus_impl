@@ -12,12 +12,31 @@ def determine_longer_and_shorter_lines(line_a, line_b):
         return (line_a, line_b)
     
     
-def get_total_distance_function(perp_dist_func, angle_dist_func, parrallel_dist_func):
-    def __dist_func(line_a, line_b, perp_func=perp_dist_func, angle_func=angle_dist_func, \
-                    parr_func=parrallel_dist_func):
-        return perp_func(line_a, line_b) + angle_func(line_a, line_b) + \
-            parr_func(line_a, line_b)
-    return __dist_func
+def get_total_distance_function(line_a, line_b):
+    # c1 = clock()
+    _delta = 0.000000000000000000000000000000001
+    alpha = (1 + math.e**(-(line_a.cose_of_angle_with(line_b))))**(-1)
+
+    center_1 = (line_a.start + line_a.end) / 2
+    center_2 = (line_b.start + line_b.end) / 2
+
+    d1 = center_1.distance_to(center_2)
+
+
+    vec_1 = line_a.start - line_b.start
+    vec_2 = line_a.end - line_b.end
+    vec = vec_2 - vec_1
+    d2 = math.sqrt(vec.x**2 + vec.y**2)
+
+    d = (1-alpha) * d1 + alpha * d2
+    #print('alpha:%f, d1:%f, d2:%f'%(alpha,d1,d2))
+    # c2 = clock()
+    # print('\t%f' % (c2-c1))
+    return d + _delta
+    # return perpendicular_distance(line_a, line_b) + angular_distance(line_a, line_b) + \
+    #         parrallel_distance(line_a, line_b)
+
+
 
 def perpendicular_distance(line_a, line_b):
     longer_line, shorter_line = determine_longer_and_shorter_lines(line_a, line_b)
@@ -58,3 +77,4 @@ def parrallel_distance(line_a, line_b):
     
 def dist_to_projection_point(line, proj):
     return min(proj.distance_to(line.start), proj.distance_to(line.end))
+

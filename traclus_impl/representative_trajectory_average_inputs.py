@@ -37,7 +37,15 @@ def numbers_within(a, b, max_diff):
 def possibly_append_to_active_list(active_list, out, prev_pos, min_prev_dist, min_lines):
     if (len(out) == 0 or prev_pos - out[len(out) - 1]['horizontal_position'] >= min_prev_dist) and len(active_list) >= min_lines:
         temp = []
-        for line_seg in active_list:
+        line_list = []
+        tmp  = active_list.head
+        while tmp:
+            if tmp.item:
+                line_list.append(tmp.item.line_segment)
+            tmp = tmp.next
+            if tmp == active_list.head:
+                break
+        for line_seg in line_list:
             temp.append(line_seg)
         out.append({'lines': temp, 'horizontal_position': prev_pos})
         

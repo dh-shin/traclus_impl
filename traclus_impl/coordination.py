@@ -17,7 +17,7 @@ def run_traclus(point_iterable_list, epsilon, min_neighbors, min_num_trajectorie
                         partitioned_points_hook=hooks.partitioned_points_hook, \
                         clusters_hook=hooks.clusters_hook):
     cleaned_input = []
-    for traj in map(lambda l: with_spikes_removed(l), point_iterable_list):
+    for traj in list(map(lambda l: with_spikes_removed(l), point_iterable_list)):
         cleaned_traj = []
         if len(traj) > 1:
             prev = traj[0]

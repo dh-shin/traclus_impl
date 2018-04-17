@@ -9,7 +9,7 @@ from geometry import Point
 import json
 from coordination import run_traclus
 import os
-
+from time import clock
 @click.command()
 @click.option(
               '--input-file', '-i',
@@ -30,12 +30,14 @@ def main(input_file,
          output_file,
          partitioned_trajectories_output_file_name=None,
          clusters_output_file_name=None):
+    c1 = clock()
     result = parse_input_and_run_traclus(input_file,
                                          partitioned_trajectories_output_file_name, 
                                          clusters_output_file_name) 
     
-    dict_result = map(lambda traj: map(lambda pt: pt.as_dict(), traj), result)
-    
+    dict_result = list(map(lambda traj: list(map(lambda pt: pt.as_dict(), traj)), result))
+    c2 = clock()
+    print('%f' % (c2-c1))
     with open(get_correct_path_to_file(output_file), 'w') as output_stream:
         output_stream.write(json.dumps(dict_result))
 
@@ -54,7 +56,7 @@ def parse_input_and_run_traclus(input_file,
                             'min_prev_dist']:
         assert parsed_input[required_param], "missing param: " + str(required_param)    
     
-    trajs = map(lambda traj: map(lambda pt: Point(**pt), traj), parsed_input['trajectories'])
+    trajs = list(map(lambda traj: list(map(lambda pt: Point(**pt), traj)), parsed_input['trajectories']))
             
     partitioned_traj_hook = \
     get_dump_partitioned_trajectories_hook(partitioned_trajectories_output_file_name)
@@ -76,8 +78,8 @@ def get_dump_partitioned_trajectories_hook(file_name):
         return None
     
     def func(partitioned_stage_output):
-        dict_trajs = map(lambda traj_line_seg: traj_line_seg.line_segment.as_dict(), 
-                         partitioned_stage_output)
+        dict_trajs = list(map(lambda traj_line_seg: traj_line_seg.line_segment.as_dict(),
+                         partitioned_stage_output))
         with open(get_correct_path_to_file(file_name), 'w') as output:
             output.write(json.dumps(dict_trajs))
     return func
@@ -90,8 +92,8 @@ def get_dump_clusters_hook(file_name):
         all_cluster_line_segs = []
         for clust in clusters:
             line_segs = clust.get_trajectory_line_segments()
-            dict_output = map(lambda traj_line_seg: traj_line_seg.line_segment.as_dict(), 
-                              line_segs)
+            dict_output = list(map(lambda traj_line_seg: traj_line_seg.line_segment.as_dict(),
+                              line_segs))
             all_cluster_line_segs.append(dict_output)
             
         with open(get_correct_path_to_file(file_name), 'w') as output:
@@ -102,4 +104,5 @@ def get_correct_path_to_file(file_name):
     return file_name
 
 if __name__ == '__main__':
+
     main()

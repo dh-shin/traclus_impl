@@ -10,7 +10,7 @@ from geometry import Point
 from representative_line_finding import get_average_vector, get_rotated_line_segment
 
 def get_representative_line_from_trajectory_line_segments(trajectory_line_segments, min_vertical_lines, min_prev_dist):
-    average_trajectory_vector = get_average_vector(line_segment_list=map(lambda x: x.line_segment, trajectory_line_segments))
+    average_trajectory_vector = get_average_vector(line_segment_list=list(map(lambda x: x.line_segment, trajectory_line_segments)))
     
     for traj_line_seg in trajectory_line_segments:
         traj_line_seg.line_segment = get_rotated_line_segment(traj_line_seg.line_segment, \
@@ -51,7 +51,7 @@ def line_segment_averaging_set_iterable(line_segments_to_average):
     line_segment_averaging_set = []
     horizontal_coord = line_segments_to_average['horizontal_position']
     for seg in line_segments_to_average['lines']:
-        line_segment_averaging_set.append({'horizontal_pos': horizontal_coord, 'line_seg': seg.line_segment})
+        line_segment_averaging_set.append({'horizontal_pos': horizontal_coord, 'line_seg': seg})
     
     return line_segment_averaging_set
 
