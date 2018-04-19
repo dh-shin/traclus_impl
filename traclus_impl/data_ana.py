@@ -119,7 +119,7 @@ def main():
         'yellowgreen': '#9ACD32'}
     k = len(cc)
     c=list(sorted(cc))
-    with open(r'C:\Users\xiaoF\Documents\Projects\traclus_impl-master\traclus_impl\sh00101_cluster.txt') as f:
+    with open(r'C:\Users\xiaoF\Documents\Projects\traclus_impl-master\traclus_impl\1830-1845_cluster.txt') as f:
         data = json.load(f)
         print(len(data))
         i = 1
