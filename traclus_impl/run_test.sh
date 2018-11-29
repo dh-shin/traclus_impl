@@ -1,6 +1,6 @@
 #!/bin/sh
-file_path="."
-prefix="raw_campus_trajectories"
+file_path="../../traclus_data"
+prefix="gwanak_trip_traclus"
 i_file=$file_path"/"$prefix"_input.txt"
 o_file=$file_path"/"$prefix"_output.txt"
 c_file=$file_path"/"$prefix"_cluster.txt"
