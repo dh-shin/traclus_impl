@@ -9,7 +9,7 @@ from representative_trajectory_average_inputs import get_representative_trajecto
 from geometry import Point
 from representative_line_finding import get_average_vector, get_rotated_line_segment
 
-def get_representative_line_from_trajectory_line_segments(trajectory_line_segments, min_vertical_lines, min_prev_dist):
+def get_representative_line_from_trajectory_line_segments(trajectory_line_segments, min_vline, min_prev_dist):
     average_trajectory_vector = get_average_vector(line_segment_list=list(map(lambda x: x.line_segment, trajectory_line_segments)))
     
     for traj_line_seg in trajectory_line_segments:
@@ -17,13 +17,13 @@ def get_representative_line_from_trajectory_line_segments(trajectory_line_segmen
                                                               - average_trajectory_vector.angle)
         
     representative_points = get_representative_line_from_rotated_line_segments(trajectory_line_segments=trajectory_line_segments, \
-                                                                               min_vertical_lines=min_vertical_lines, \
+                                                                               min_vline=min_vline, \
                                                                                min_prev_dist=min_prev_dist)
     return map(lambda x: x.rotated(angle_in_degrees=average_trajectory_vector.angle), representative_points)
 
-def get_representative_line_from_rotated_line_segments(trajectory_line_segments, min_vertical_lines, min_prev_dist):
+def get_representative_line_from_rotated_line_segments(trajectory_line_segments, min_vline, min_prev_dist):
     inputs = get_representative_trajectory_average_inputs(trajectory_line_segments=trajectory_line_segments, \
-                                                          min_prev_dist=min_prev_dist, min_lines=min_vertical_lines)
+                                                          min_prev_dist=min_prev_dist, min_lines=min_vline)
     out = []
     for line_seg_averaging_input in inputs:
         vert_val = get_mean_vertical_coordinate_in_line_segments(line_seg_averaging_input)

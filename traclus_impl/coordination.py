@@ -11,74 +11,72 @@ from traclus_dbscan import TrajectoryLineSegmentFactory, \
 from trajectory_partitioning import get_line_segment_from_points, \
     call_partition_trajectory
 
-def run_traclus(point_iterable_list, epsilon, min_neighbors, min_num_trajectories_in_cluster, \
-                        min_vertical_lines, \
-                        min_prev_dist,\
-                        partitioned_points_hook=hooks.partitioned_points_hook, \
-                        clusters_hook=hooks.clusters_hook):
-    cleaned_input = []
-    for traj in list(map(lambda l: with_spikes_removed(l), point_iterable_list)):
-        cleaned_traj = []
-        if len(traj) > 1:
-            prev = traj[0]
-            cleaned_traj.append(traj[0])
-            for pt in traj[1:]:
-                if prev.distance_to(pt) > 0.0:
-                    cleaned_traj.append(pt)
-                    prev = pt           
-            if len(cleaned_traj) > 1:
-                cleaned_input.append(cleaned_traj)
-    
-    return the_whole_enchilada(point_iterable_list=cleaned_input, \
-                        epsilon=epsilon, \
-                        min_neighbors=min_neighbors, \
-                        min_num_trajectories_in_cluster=min_num_trajectories_in_cluster, \
-                        min_vertical_lines=min_vertical_lines, \
-                        min_prev_dist=min_prev_dist, \
-                        partitioned_points_hook=partitioned_points_hook, \
-                        clusters_hook=clusters_hook)
-    
-def with_spikes_removed(trajectory):
-    if len(trajectory) <= 2:
-        return trajectory[:]
-        
-    spikes_removed = []
-    spikes_removed.append(trajectory[0])
-    cur_index = 1
-    while cur_index < len(trajectory) - 1:
-        if trajectory[cur_index - 1].distance_to(trajectory[cur_index + 1]) > 0.0:
-            spikes_removed.append(trajectory[cur_index])
-        cur_index += 1
-        
-    spikes_removed.append(trajectory[cur_index])
-    return spikes_removed
-                        
-def the_whole_enchilada(point_iterable_list, epsilon, min_neighbors, min_num_trajectories_in_cluster, \
-                        min_vertical_lines, \
-                        min_prev_dist,\
-                        partitioned_points_hook=hooks.partitioned_points_hook, \
-                        clusters_hook=hooks.clusters_hook):
+# min_traj : minimum number of trajectories in cluster
+# min_vline : minimum number of vertical lines
+# p_hook : partitioned_points_hook
+# c_hook : clusters_hook
+
+def run_traclus(trajs, eps, min_lns, min_traj, \
+                min_vline, min_prev_dist,\
+                p_hook=hooks.partitioned_points_hook, \
+                c_hook=hooks.clusters_hook):
+
+    trajs = get_cleaned_trajectories(trajs)
     trajectory_line_segment_factory = TrajectoryLineSegmentFactory()
+
     def _dbscan_caller(cluster_candidates):
-        line_seg_index = BestAvailableClusterCandidateIndex(cluster_candidates, epsilon)
+        line_seg_index = BestAvailableClusterCandidateIndex(cluster_candidates, eps)
         return dbscan(cluster_candidates_index=line_seg_index, #TrajectoryLineSegmentCandidateIndex(cluster_candidates), \
-                      min_neighbors=min_neighbors, \
+                      min_neighbors=min_lns, \
                       cluster_factory=TrajectoryClusterFactory())
-        
+
     all_traj_segs_iter_from_all_points_caller = \
     get_all_trajectory_line_segments_iterable_from_all_points_iterable_caller(get_line_segs_from_points_func=get_trajectory_line_segments_from_points_iterable, \
                                                                               trajectory_line_segment_factory=trajectory_line_segment_factory, \
                                                                               trajectory_partitioning_func=call_partition_trajectory, \
                                                                               line_seg_from_points_func=get_line_segment_from_points, \
-                                                                              partitioned_points_hook=partitioned_points_hook)
+                                                                              partitioned_points_hook=p_hook)
     cluster_iter_from_points_caller = \
     get_cluster_iterable_from_all_points_iterable_caller(get_all_traj_segs_from_all_points_caller=all_traj_segs_iter_from_all_points_caller, \
                                                          dbscan_caller=_dbscan_caller, \
-                                                         clusters_hook=clusters_hook)
-    representative_line_from_trajectory_caller = get_representative_lines_from_trajectory_caller(min_vertical_lines=min_vertical_lines, min_prev_dist=min_prev_dist)
-    return representative_line_seg_iterable_from_all_points_iterable(point_iterable_list, get_cluster_iterable_from_all_points_iterable_caller=cluster_iter_from_points_caller, \
+                                                         clusters_hook=c_hook)
+    representative_line_from_trajectory_caller = get_representative_lines_from_trajectory_caller(min_vline=min_vline, min_prev_dist=min_prev_dist)
+    return representative_line_seg_iterable_from_all_points_iterable(trajs, get_cluster_iterable_from_all_points_iterable_caller=cluster_iter_from_points_caller, \
                                                                      get_representative_line_seg_from_trajectory_caller=representative_line_from_trajectory_caller, \
-                                                                     min_num_trajectories_in_cluster=min_num_trajectories_in_cluster)
+                                                                     min_traj=min_traj)
+
+
+def get_cleaned_trajectories(trajs):
+    cleaned = []
+    # remove spikes & continuously duplicate points
+    for traj in list(map(lambda l: with_spikes_removed(l), trajs)):
+        revised_traj = []
+        if len(traj) > 1:
+            prev = traj[0]
+            revised_traj.append(traj[0])
+            for pt in traj[1:]:
+                if prev.distance_to(pt) > 0.0:
+                    revised_traj.append(pt)
+                    prev = pt
+            if len(revised_traj) > 1:
+                cleaned.append(revised_traj)
+    return cleaned
+
+
+def with_spikes_removed(traj):
+    if len(traj) <= 2:
+        return traj[:]
+
+    spikes_removed = []
+    spikes_removed.append(traj[0])
+    cur_index = 1
+    while cur_index < len(traj) - 1:
+        if traj[cur_index - 1].distance_to(traj[cur_index + 1]) > 0.0:
+            spikes_removed.append(traj[cur_index])
+        cur_index += 1
+    spikes_removed.append(traj[cur_index])
+    return spikes_removed
+
 
 def get_cluster_iterable_from_all_points_iterable_caller(get_all_traj_segs_from_all_points_caller, \
                                                   dbscan_caller, \
@@ -92,20 +90,20 @@ def get_cluster_iterable_from_all_points_iterable_caller(get_all_traj_segs_from_
         return clusters
     return _func
 
-def get_representative_lines_from_trajectory_caller(min_vertical_lines, min_prev_dist):
+def get_representative_lines_from_trajectory_caller(min_vline, min_prev_dist):
     def _func(trajectory_line_segs):
         return get_representative_line_from_trajectory_line_segments(trajectory_line_segments=trajectory_line_segs, \
-                                                                     min_vertical_lines=min_vertical_lines, min_prev_dist=min_prev_dist)
+                                                                     min_vline=min_vline, min_prev_dist=min_prev_dist)
     return _func
 
 def representative_line_seg_iterable_from_all_points_iterable(point_iterable_list, \
                                                               get_cluster_iterable_from_all_points_iterable_caller, \
                                                               get_representative_line_seg_from_trajectory_caller, 
-                                                              min_num_trajectories_in_cluster):
+                                                              min_traj):
     rep_lines = []
     clusters = get_cluster_iterable_from_all_points_iterable_caller(point_iterable_list)
     for traj_cluster in clusters:
-        if traj_cluster.num_trajectories_contained() >= min_num_trajectories_in_cluster:
+        if traj_cluster.num_trajectories_contained() >= min_traj:
             rep_lines.append(get_representative_line_seg_from_trajectory_caller(traj_cluster.get_trajectory_line_segments()))
                 
     return rep_lines
