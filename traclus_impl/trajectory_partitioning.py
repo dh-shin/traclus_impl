@@ -8,7 +8,7 @@ from distance_functions import perpendicular_distance, \
 angular_distance
 import math
 from mutable_float import MutableFloat
-from traclus_impl.representative_trajectory_average_inputs import DECIMAL_MAX_DIFF_FOR_EQUALITY
+from representative_trajectory_average_inputs import DECIMAL_MAX_DIFF_FOR_EQUALITY
 
 """Added to offsets before taking the log of them. Helps to avoid
 taking the log of 0.0"""

@@ -127,10 +127,10 @@ try:
     from rtree import index
     BestAvailableClusterCandidateIndex = RtreeTrajectoryLineSegmentCandidateIndex
     sys.stderr.write(str(os.path.realpath(__file__)) + ": rtree import succeeded." + \
-                     " Using an r-tree for clustering")
+                     " Using an r-tree for clustering\n")
 except ImportError:
     BestAvailableClusterCandidateIndex = TrajectoryLineSegmentCandidateIndex
     sys.stderr.write(str(os.path.realpath(__file__)) + ": rtree import failed." + \
-                     " Using plain python quadratic clustering")
+                     " Using plain python quadratic clustering\n")
     
     

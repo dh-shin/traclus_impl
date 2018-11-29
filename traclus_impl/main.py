@@ -9,7 +9,7 @@ from geometry import Point
 import json
 from coordination import run_traclus
 import os
-from time import clock
+import time
 @click.command()
 @click.option(
               '--input-file', '-i',
@@ -30,16 +30,20 @@ def main(input_file,
          output_file,
          partitioned_trajectories_output_file_name=None,
          clusters_output_file_name=None):
-    c1 = clock()
+
+    c1 = time.time()
     result = parse_input_and_run_traclus(input_file,
                                          partitioned_trajectories_output_file_name, 
                                          clusters_output_file_name) 
     
     dict_result = list(map(lambda traj: list(map(lambda pt: pt.as_dict(), traj)), result))
-    c2 = clock()
-    print('%f' % (c2-c1))
+    c2 = time.time()
+
+    print('elapsed time : %f' % (c2 - c1))
+
     with open(get_correct_path_to_file(output_file), 'w') as output_stream:
         output_stream.write(json.dumps(dict_result))
+        print('output file has been successfully written : ' + output_file)
 
 def parse_input_and_run_traclus(input_file,
          partitioned_trajectories_output_file_name=None,
