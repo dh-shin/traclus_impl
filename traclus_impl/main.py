@@ -9,6 +9,7 @@ import json
 import os
 import time
 import filecmp
+
 from geometry import Point
 from coordination import run_traclus
 
@@ -31,9 +32,29 @@ from coordination import run_traclus
 
 def main(input_file, output_file, p_file=None, c_file=None):
     print('===============================================')
-
     c1 = time.time()
-    result = parse_input_and_run_traclus(input_file, p_file, c_file)
+
+    parsed_input = None
+    with open(input_file, 'r') as read_file:
+        parsed_input = json.load(read_file)
+
+    for required_param in ['trajectories', 'epsilon', 'min_neighbors',
+                        'min_num_trajectories_in_cluster',
+                        'min_vertical_lines', 'min_prev_dist']:
+        assert parsed_input[required_param], "missing param: " + str(required_param)
+
+    trajs = list(map(lambda traj: list(map(lambda pt: Point(**pt), traj)), parsed_input['trajectories']))
+    print('Number of input trajectories : {}'.format(len(trajs)))
+
+    p_hook = get_partitioned_hook(p_file)
+    c_hook = get_clusters_hook(c_file)
+
+    result = run_traclus(trajs=trajs, eps=parsed_input['epsilon'], 
+                        min_lns=parsed_input['min_neighbors'],
+                        min_traj=parsed_input['min_num_trajectories_in_cluster'],
+                        min_vline=parsed_input['min_vertical_lines'],
+                        min_prev_dist=parsed_input['min_prev_dist'],
+                        p_hook=p_hook, c_hook=c_hook)
 
     dict_result = list(map(lambda traj: list(map(lambda pt: pt.as_dict(), traj)), result))
     c2 = time.time()
@@ -45,36 +66,6 @@ def main(input_file, output_file, p_file=None, c_file=None):
 
     print('elapsed time : %f' % (c2 - c1))
     print('===============================================')
-
-
-def parse_input_and_run_traclus(input_file, p_file=None, c_file=None):
-
-    parsed_input = None
-    with open(input_file, 'r') as read_file:
-        parsed_input = json.load(read_file)
-
-    for required_param in ['trajectories',
-                           'epsilon',
-                           'min_neighbors',
-                           'min_num_trajectories_in_cluster',
-                            'min_vertical_lines',
-                            'min_prev_dist']:
-        assert parsed_input[required_param], "missing param: " + str(required_param)
-
-    trajs = list(map(lambda traj: list(map(lambda pt: Point(**pt), traj)), parsed_input['trajectories']))
-    print('Number of input trajectories : {}'.format(len(trajs)))
-
-    p_hook = get_partitioned_hook(p_file)
-    c_hook = get_clusters_hook(c_file)
-
-    return run_traclus(trajs=trajs,
-                      eps=parsed_input['epsilon'],
-                      min_lns=parsed_input['min_neighbors'],
-                      min_traj=parsed_input['min_num_trajectories_in_cluster'],
-                      min_vline=parsed_input['min_vertical_lines'],
-                      min_prev_dist=parsed_input['min_prev_dist'],
-                      p_hook=p_hook, c_hook=c_hook)
-
 
 def get_partitioned_hook(file_name):
     if not file_name:
@@ -88,7 +79,6 @@ def get_partitioned_hook(file_name):
         check_file_sameness(file_name)
 
     return func
-
 
 def get_clusters_hook(file_name):
     if not file_name:
@@ -108,7 +98,6 @@ def get_clusters_hook(file_name):
         check_file_sameness(file_name)
 
     return func
-
 
 def check_file_sameness(x):
     y = x + '.org'
