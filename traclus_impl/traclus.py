@@ -25,18 +25,17 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
 
     # Partitioning
     cluster_candidates_tls = []
-    traj_ls_list = []
     tls_factory = TrajectoryLineSegmentFactory()
     for traj in trajs:
-        good_indices = call_partition_trajectory(traj.pts)
-        good_pts = filter_by_indices(good_indices, traj.pts)
-        ls_list = get_ls_list(good_pts)
+        p_indices = call_partition_trajectory(traj.pts)
+        p_pts = filter_by_indices(p_indices, traj.pts)
+        traj.p_pts = p_pts
+        ls_list = get_ls_list(p_pts)
         if len(ls_list) <= 0:
             raise Exception()
         for ls in ls_list:
             tls = tls_factory.create(ls, traj.tid)
             cluster_candidates_tls.append(tls)
-        traj_ls_list.append([ls.as_dict() for ls in ls_list])
     
     # Clustering (DBSCAN)
     tls_index = BestAvailableClusterCandidateIndex(cluster_candidates_tls, eps)
@@ -52,8 +51,7 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
             rline_pts_list.append(rline_pts)
             
     result = {
-        "all_tls": cluster_candidates_tls,
-        "traj_ls": traj_ls_list,
+        "partitioned_trajs": trajs,
         "cluster": tclusters,
         "representative": rline_pts_list
     }

@@ -53,26 +53,22 @@ def main(input_file, output_file, p_file=None, c_file=None):
                         min_prev_dist=parsed_input['min_prev_dist'])   
     c2 = time.time()
 
-    all_tls = result['all_tls']
-    traj_ls_list = result['traj_ls']
+    p_trajs = result['partitioned_trajs']
     tclusters = result['cluster']
     repr_lines = result['representative']
 
-    write_all_tls(p_file, all_tls)
+    write_partitioned_trajectories(p_file, p_trajs)
     write_clusters(c_file, tclusters)
     write_repr_lines(output_file, repr_lines)
-
-    with open("trajectory_segments.json", 'w') as write_file:
-        json.dump(traj_ls_list, write_file, indent=4)
 
     print('elapsed time : %f' % (c2 - c1))
     print('===============================================')
 
-def write_all_tls(file_name, tls_list):
+def write_partitioned_trajectories(file_name, p_trajs):
     if file_name:
-        dict_output = list(map(lambda tls: tls.segment.as_dict(), tls_list))
+        dict_result = [traj.as_dict() for traj in p_trajs]
         with open(file_name, 'w') as write_file:
-            json.dump(dict_output, write_file, indent=4)    
+            json.dump(dict_result, write_file, indent=4)
         check_file_sameness(file_name)
 
 def write_clusters(file_name, tclusters):

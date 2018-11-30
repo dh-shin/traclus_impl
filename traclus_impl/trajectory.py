@@ -9,10 +9,18 @@ from generic_dbscan import Cluster, ClusterCandidate, ClusterFactory, ClusterCan
 class Trajectory():
     def __init__(self, pts, tid):
         self.pts = pts
+        self.p_pts = []
         self.tid = tid
 
     def __repr__(self):
         return str(self.pts)
+
+    def as_dict(self):
+        return {
+            'id': self.tid,
+            'trajectories': [pt.as_dict() for pt in self.pts],
+            'p_trajectories': [pt.as_dict() for pt in self.p_pts]
+        }
 
 class TrajectoryLineSegmentFactory():
     def __init__(self):
