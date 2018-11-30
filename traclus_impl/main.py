@@ -10,7 +10,7 @@ import os
 import time
 import filecmp
 
-from coordination import run_traclus
+from traclus import run_traclus
 
 @click.command()
 @click.option(

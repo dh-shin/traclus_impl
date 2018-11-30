@@ -115,7 +115,6 @@ def remove_spikes(traj):
     return spikes_removed
 
 def get_ls_list(pts):
-    
     # emptyness check
     if not pts:
         raise ValueError("pts doesn't have any values")
