@@ -7,10 +7,10 @@ from distance_functions import get_total_distance_function
 from generic_dbscan import Cluster, ClusterCandidate, ClusterFactory, ClusterCandidateIndex
 
 class Trajectory():
-    def __init__(self, pts, tid):
+    def __init__(self, pts, id):
         self.pts = pts
         self.p_pts = []
-        self.tid = tid
+        self.tid = id
 
     def __repr__(self):
         return str(self.pts)
@@ -115,10 +115,17 @@ class RtreeTrajectoryLineSegmentCandidateIndex(ClusterCandidateIndex):
         return (left, btm, right, top)
 
 class TrajectoryCluster(Cluster):
-    def __init__(self):
+    def __init__(self, id):
         Cluster.__init__(self)
+        self.cid = id
         self.trajectories = set()
-           
+
+    def as_dict(self):
+        return {
+            'segments': [tls.as_dict() for tls in self.members],
+            'cluster_id': self.cid
+        }
+
     def add_member(self, tls):
         Cluster.add_member(self, tls)
         if not (tls.tid in self.trajectories):
@@ -131,8 +138,13 @@ class TrajectoryCluster(Cluster):
         return self.members
     
 class TrajectoryClusterFactory(ClusterFactory):
-    def new_cluster(self):
-        return TrajectoryCluster()
+    def __init__(self):
+        self.next_cid = 0
+
+    def create(self):
+        curr_cid = self.next_cid
+        self.next_cid += 1
+        return TrajectoryCluster(curr_cid)
 
 # Use an r tree index for line segments during dbscan if it's available, 
 # otherwise use the pure python n squared dbscan.

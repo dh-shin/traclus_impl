@@ -67,7 +67,7 @@ def dbscan(cluster_candidates_index, min_neighbors, cluster_factory):
         if not item.is_classified():  
             neighbors = cluster_candidates_index.find_neighbors_of(item)
             if len(neighbors) >= min_neighbors:
-                cur_cluster = cluster_factory.new_cluster()
+                cur_cluster = cluster_factory.create()
                 cur_cluster.add_member(item)
                 item.assign_to_cluster(cur_cluster)
                 

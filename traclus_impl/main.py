@@ -76,14 +76,10 @@ def write_partitioned_trajectories(file_name, p_trajs):
 
 def write_clusters(file_name, tclusters):
     if file_name:
-        all_tc_tls = []
-        for tc in tclusters:
-            tls_list = tc.get_members()
-            dict_output = [tls.as_dict() for tls in tls_list]
-            all_tc_tls.append(dict_output)
+        dict_result = [tc.as_dict() for tc in tclusters]
         with open(file_name, 'w') as write_file:
-            json.dump(all_tc_tls, write_file, indent=4)
-        check_output_parity(file_name)
+            json.dump(dict_result, write_file, indent=4)
+        check_output_parity(file_name)     
 
 def write_repr_lines(file_name, repr_lines):
     dict_result = [[pt.as_dict() for pt in pt_list] for pt_list in repr_lines]
