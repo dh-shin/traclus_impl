@@ -10,7 +10,6 @@ import os
 import time
 import filecmp
 
-from geometry import Point
 from coordination import run_traclus
 
 @click.command()
@@ -42,12 +41,12 @@ def main(input_file, output_file, p_file=None, c_file=None):
                         'min_vertical_lines', 'min_prev_dist']:
         assert parsed_input[required_param], "missing param: " + str(required_param)
 
-    trajs = list(map(lambda traj: list(map(lambda pt: Point(**pt), traj)), parsed_input['trajectories']))
-    print('Number of input trajectories : {}'.format(len(trajs)))
+    raw_trajs = parsed_input['trajectories']
+    print('Number of input trajectories : {}'.format(len(raw_trajs)))
 
     c1 = time.time()
 
-    result = run_traclus(trajs=trajs, eps=parsed_input['epsilon'], 
+    result = run_traclus(trajs=raw_trajs, eps=parsed_input['epsilon'], 
                         min_lns=parsed_input['min_neighbors'],
                         min_traj=parsed_input['min_num_trajectories_in_cluster'],
                         min_vline=parsed_input['min_vertical_lines'],
@@ -56,11 +55,11 @@ def main(input_file, output_file, p_file=None, c_file=None):
 
     all_tls = result['all_tls']
     traj_ls_list = result['traj_ls']
-    clusters = result['cluster']
+    tclusters = result['cluster']
     repr_lines = result['representative']
 
     write_all_tls(p_file, all_tls)
-    write_clusters(c_file, clusters)
+    write_clusters(c_file, tclusters)
     write_repr_lines(output_file, repr_lines)
 
     with open("trajectory_segments.json", 'w') as write_file:
@@ -76,15 +75,15 @@ def write_all_tls(file_name, tls_list):
             json.dump(dict_output, write_file, indent=4)    
         check_file_sameness(file_name)
 
-def write_clusters(file_name, clusters):
+def write_clusters(file_name, tclusters):
     if file_name:
-        all_cluster_segments = []
-        for cluster in clusters:
-            tls_list = cluster.get_members()
+        all_tc_tls = []
+        for tc in tclusters:
+            tls_list = tc.get_members()
             dict_output = list(map(lambda tls: tls.segment.as_dict(), tls_list))
-            all_cluster_segments.append(dict_output)
+            all_tc_tls.append(dict_output)
         with open(file_name, 'w') as write_file:
-            json.dump(all_cluster_segments, write_file, indent=4)
+            json.dump(all_tc_tls, write_file, indent=4)
         check_file_sameness(file_name)
 
 def write_repr_lines(file_name, repr_lines):

@@ -3,6 +3,7 @@ Created on Jan 10, 2016
 
 @author: Alex
 '''
+from geometry import Point
 from geometry import LineSegment
 from generic_dbscan import dbscan
 from traclus_dbscan import TrajectoryLineSegmentFactory
@@ -13,43 +14,45 @@ from line_segment_averaging import get_rline_pts
 
 # min_traj : minimum number of trajectories in cluster
 # min_vline : minimum number of vertical lines
+def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
 
-def run_traclus(trajs, eps, min_lns, min_traj, \
-                min_vline, min_prev_dist):
-
+    # Cleaning
+    trajs = [[Point(**pt) for pt in traj] for traj in trajs]
     trajs = get_cleaned_trajectories(trajs)
-    tls_factory = TrajectoryLineSegmentFactory()
+    print('Number of trajectories after clean: {}'.format(len(trajs)))
 
     # Partitioning
-    cluster_candidates = []
+    cluster_candidates_tls = []
     traj_ls_list = []
+    tls_factory = TrajectoryLineSegmentFactory()
     for curr_tid, traj in enumerate(trajs):
         good_indices = call_partition_trajectory(traj)
-        good_points = filter_by_indices(good_indices, traj)
-        ls_list = get_ls_list(good_points)
+        good_pts = filter_by_indices(good_indices, traj)
+        ls_list = get_ls_list(good_pts)
         if len(ls_list) <= 0:
             raise Exception()
         for ls in ls_list:
             tls = tls_factory.create(ls, curr_tid)
-            cluster_candidates.append(tls)
+            cluster_candidates_tls.append(tls)
         traj_ls_list.append([ls.as_dict() for ls in ls_list])
     
     # Clustering (DBSCAN)
-    line_seg_index = BestAvailableClusterCandidateIndex(cluster_candidates, eps)
-    clusters = dbscan(line_seg_index, min_lns, TrajectoryClusterFactory())
+    tls_index = BestAvailableClusterCandidateIndex(cluster_candidates_tls, eps)
+    tcluster_factory = TrajectoryClusterFactory()
+    tclusters = dbscan(tls_index, min_lns, tcluster_factory)
     
     # Representative line segments
     rline_pts_list = []
-    for traj_cluster in clusters:
-        if traj_cluster.get_num_of_trajs() >= min_traj:
-            tls_list = traj_cluster.get_members()
+    for tc in tclusters:
+        if tc.get_num_of_trajs() >= min_traj:
+            tls_list = tc.get_members()
             rline_pts = get_rline_pts(tls_list, min_vline, min_prev_dist)
             rline_pts_list.append(rline_pts)
             
     result = {
-        "all_tls": cluster_candidates,
+        "all_tls": cluster_candidates_tls,
         "traj_ls": traj_ls_list,
-        "cluster": clusters,
+        "cluster": tclusters,
         "representative": rline_pts_list
     }
     
@@ -79,22 +82,25 @@ def filter_by_indices(good_indices, vals):
     return [vals[i] for i in good_indices]
 
 def get_cleaned_trajectories(trajs):
+    trajs = [remove_spikes(pts) for pts in trajs]
+    trajs = [remove_duplicate(pts) for pts in trajs]
+    trajs = [pts for pts in trajs if len(pts) > 1]
+    return trajs
+
+def remove_duplicate(traj):
     cleaned = []
-    # remove spikes & continuously duplicate points
-    for traj in list(map(lambda l: with_spikes_removed(l), trajs)):
-        revised_traj = []
-        if len(traj) > 1:
-            prev = traj[0]
-            revised_traj.append(traj[0])
-            for pt in traj[1:]:
-                if prev.distance_to(pt) > 0.0:
-                    revised_traj.append(pt)
-                    prev = pt
-            if len(revised_traj) > 1:
-                cleaned.append(revised_traj)
+    prev = None
+    for pt in traj:
+        if prev is None:
+            prev = pt
+            cleaned.append(pt)
+        else:
+            if prev.distance_to(pt) > 0.0:
+                cleaned.append(pt)
+                prev = pt
     return cleaned
 
-def with_spikes_removed(traj):
+def remove_spikes(traj):
     if len(traj) <= 2:
         return traj[:]
 

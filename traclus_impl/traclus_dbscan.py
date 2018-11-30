@@ -6,6 +6,11 @@ Created on Dec 31, 2015
 from distance_functions import get_total_distance_function
 from generic_dbscan import Cluster, ClusterCandidate, ClusterFactory, ClusterCandidateIndex
 
+class Trajectory():
+    def __init__(self, pts, tid):
+        self.pts = pts
+        self.tid = tid
+
 class TrajectoryLineSegmentFactory():
     def __init__(self):
         self.next_sid = 0
