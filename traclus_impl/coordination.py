@@ -5,11 +5,12 @@ Created on Jan 10, 2016
 '''
 import hooks
 from generic_dbscan import dbscan
-from line_segment_averaging import get_representative_line_from_trajectory_line_segments
-from traclus_dbscan import TrajectoryLineSegmentFactory, \
-    TrajectoryClusterFactory, BestAvailableClusterCandidateIndex
-from trajectory_partitioning import get_line_segment_from_points, \
-    call_partition_trajectory
+from line_segment_averaging import get_rline_from_traj_segments
+from traclus_dbscan import TrajectoryLineSegmentFactory
+from traclus_dbscan import TrajectoryClusterFactory
+from traclus_dbscan import BestAvailableClusterCandidateIndex
+from trajectory_partitioning import call_partition_trajectory
+from trajectory_partitioning import get_line_segment_from_points
 
 # min_traj : minimum number of trajectories in cluster
 # min_vline : minimum number of vertical lines
@@ -21,15 +22,17 @@ def run_traclus(trajs, eps, min_lns, min_traj, \
                 p_hook=hooks.partitioned_points_hook, c_hook=hooks.clusters_hook):
 
     trajs = get_cleaned_trajectories(trajs)
-    trajectory_line_segment_factory = TrajectoryLineSegmentFactory()
+    tls_factory = TrajectoryLineSegmentFactory()
 
-    # get partitioned segments
+    # Partitioning
     traj_line_segs = []
-    cur_trajectory_id = 0
-    for point_trajectory in trajs:
-        line_segments = get_trajectory_line_segments_from_points_iterable(point_iterable=point_trajectory, 
-                                                       trajectory_line_segment_factory=trajectory_line_segment_factory, 
-                                                       trajectory_id=cur_trajectory_id)
+    for curr_tid, traj in enumerate(trajs):
+
+        good_indices = call_partition_trajectory(traj)
+        good_points = filter_by_indices(good_indices, traj)
+        line_segments = get_consecutive_line_segments(good_points)
+        line_segments = map(lambda x: tls_factory.new_trajectory_line_seg(x, curr_tid), line_segments)
+
         temp = 0
         for traj_seg in line_segments:
             traj_line_segs.append(traj_seg)
@@ -37,105 +40,57 @@ def run_traclus(trajs, eps, min_lns, min_traj, \
         if temp <= 0:
             raise Exception()
           
-        cur_trajectory_id += 1
     cluster_candidates = traj_line_segs
-
-    if p_hook:
-        p_hook(cluster_candidates)
-
+    
+    # Clustering (DBSCAN)
     line_seg_index = BestAvailableClusterCandidateIndex(cluster_candidates, eps)
     clusters = dbscan(cluster_candidates_index=line_seg_index, min_neighbors=min_lns, \
                       cluster_factory=TrajectoryClusterFactory())
+
+    if p_hook:
+        p_hook(cluster_candidates)
     
     if c_hook:
         c_hook(clusters)
 
-    # get representative line segments
+    # Representative line segments
     rep_lines = []
     for traj_cluster in clusters:
         if traj_cluster.num_trajectories_contained() >= min_traj:
             trajectory_line_segs = traj_cluster.get_trajectory_line_segments()
-            rline = get_representative_line_from_trajectory_line_segments(trajectory_line_segs, min_vline, min_prev_dist)
+            rline = get_rline_from_traj_segments(trajectory_line_segs, min_vline, min_prev_dist)
             rep_lines.append(rline)
-                
-    return rep_lines
-
-def get_trajectory_line_segments_from_points_iterable(point_iterable, trajectory_line_segment_factory, trajectory_id):
-
-    good_indices = call_partition_trajectory(trajectory_point_list=point_iterable)
-    good_point_iterable = filter_by_indices(good_indices=good_indices, vals=point_iterable)
-
-    line_segs = consecutive_item_func_iterator_getter(item_iterable=good_point_iterable)
-
-    def _create_traj_line_seg(line_seg):
-        return trajectory_line_segment_factory.new_trajectory_line_seg(line_seg, trajectory_id)
+            
+    result = {
+        "segment": cluster_candidates,
+        "cluster": clusters,
+        "representative": rep_lines
+    }
     
-    return map(_create_traj_line_seg, line_segs)
-
+    return result
 
 def filter_by_indices(good_indices, vals):
     vals_iter = iter(vals)
     good_indices_iter = iter(good_indices)
-    out_vals = []
-    
-    num_vals = 0
-    for i in good_indices_iter:
-        if i != 0:
-            raise ValueError("the first index should be 0, but it was " + str(i))
-        else:
-            for item in vals_iter:
-                out_vals.append(item)
-                break
-            num_vals = 1
-            break
-            
-    max_good_index = 0
-    vals_cur_index = 1
-    for i in good_indices_iter:
-        max_good_index = i
-        for item in vals_iter:
-            num_vals += 1
-            if vals_cur_index == i:
-                vals_cur_index += 1
-                out_vals.append(item)
-                break
-            else:
-                vals_cur_index += 1
-                
-    for i in vals_iter:
-        num_vals += 1
-                
+
+    first_index = good_indices[0]
+    last_index = good_indices[-1]
+    num_vals = len(vals)
+
+    # First index check
+    if first_index != 0:
+        raise ValueError("the first index should be 0, but it was " + str(first_index))
+
+    # length of vals check
     if num_vals < 2:
         raise ValueError("list passed in is too short")
-    if max_good_index != num_vals - 1:
-        raise ValueError("last index is " + str(max_good_index) + \
+    
+    # last index check
+    if last_index != num_vals - 1:
+        raise ValueError("last index is " + str(last_index) + \
                          " but there were " + str(num_vals) + " vals")
-    return out_vals
 
-
-def consecutive_item_func_iterator_getter(item_iterable):
-    out_vals = []
-    iterator = iter(item_iterable)
-    last_item = None
-    num_items = 0
-    for item in iterator:
-        num_items = 1
-        last_item = item
-        break
-    if num_items == 0:
-        raise ValueError("iterator doesn't have any values")
-        
-    for item in iterator:
-        num_items += 1
-        out_vals.append(get_line_segment_from_points(last_item, item))
-        last_item = item
-            
-    if num_items < 2:
-        raise ValueError("iterator didn't have at least two items")
-        
-    return out_vals
-
-
+    return [vals[i] for i in good_indices]
 
 def get_cleaned_trajectories(trajs):
     cleaned = []
@@ -153,7 +108,6 @@ def get_cleaned_trajectories(trajs):
                 cleaned.append(revised_traj)
     return cleaned
 
-
 def with_spikes_removed(traj):
     if len(traj) <= 2:
         return traj[:]
@@ -167,3 +121,23 @@ def with_spikes_removed(traj):
         cur_index += 1
     spikes_removed.append(traj[cur_index])
     return spikes_removed
+
+def get_consecutive_line_segments(items):
+    
+    # emptyness check
+    if not items:
+        raise ValueError("items doesn't have any values")
+
+    # size check
+    if len(items) < 2:
+        raise ValueError("items didn't have at least two items")
+
+    out_vals = []
+    last_item = None
+    for item in items:
+        if last_item is not None:
+            line_seg = get_line_segment_from_points(last_item, item)
+            out_vals.append(line_seg)
+        last_item = item
+        
+    return out_vals

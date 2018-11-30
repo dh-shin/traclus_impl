@@ -4,24 +4,24 @@ Created on Jan 5, 2016
 @author: Alex
 '''
 
-from representative_trajectory_average_inputs import get_representative_trajectory_average_inputs,\
-    DECIMAL_MAX_DIFF_FOR_EQUALITY
 from geometry import Point
-from representative_line_finding import get_average_vector, get_rotated_line_segment
+from representative_trajectory_average_inputs import DECIMAL_MAX_DIFF_FOR_EQUALITY
+from representative_trajectory_average_inputs import get_representative_trajectory_average_inputs
+from representative_line_finding import get_average_vector
+from representative_line_finding import get_rotated_line_segment
 
-def get_representative_line_from_trajectory_line_segments(trajectory_line_segments, min_vline, min_prev_dist):
+def get_rline_from_traj_segments(trajectory_line_segments, min_vline, min_prev_dist):
     average_trajectory_vector = get_average_vector(line_segment_list=list(map(lambda x: x.line_segment, trajectory_line_segments)))
     
     for traj_line_seg in trajectory_line_segments:
         traj_line_seg.line_segment = get_rotated_line_segment(traj_line_seg.line_segment, \
                                                               - average_trajectory_vector.angle)
         
-    representative_points = get_representative_line_from_rotated_line_segments(trajectory_line_segments=trajectory_line_segments, \
-                                                                               min_vline=min_vline, \
-                                                                               min_prev_dist=min_prev_dist)
+    representative_points = get_rline_from_rotated_segments(trajectory_line_segments=trajectory_line_segments, \
+                                                            min_vline=min_vline, min_prev_dist=min_prev_dist)
     return map(lambda x: x.rotated(angle_in_degrees=average_trajectory_vector.angle), representative_points)
 
-def get_representative_line_from_rotated_line_segments(trajectory_line_segments, min_vline, min_prev_dist):
+def get_rline_from_rotated_segments(trajectory_line_segments, min_vline, min_prev_dist):
     inputs = get_representative_trajectory_average_inputs(trajectory_line_segments=trajectory_line_segments, \
                                                           min_prev_dist=min_prev_dist, min_lines=min_vline)
     out = []
@@ -56,16 +56,13 @@ def line_segment_averaging_set_iterable(line_segments_to_average):
     return line_segment_averaging_set
 
 def number_average(iter_ob, func):
-    total = 0.0
-    count = 0
-    for item in iter_ob:
-        total += func(item)
-        count += 1
-        
+    count = len(iter_ob)
     if count == 0:
         raise Exception("no input given to take average of")
-    else:
-        return total / count
+    total = 0.0
+    for item in iter_ob:
+        total += func(item)
+    return total / count
         
 def get_mean_vertical_coordinate_in_line_segments(line_segments_to_average):
     def apply_interpolation_to_line_segment(interpolation_info):

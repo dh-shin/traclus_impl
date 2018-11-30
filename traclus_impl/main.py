@@ -56,8 +56,18 @@ def main(input_file, output_file, p_file=None, c_file=None):
                         min_prev_dist=parsed_input['min_prev_dist'],
                         p_hook=p_hook, c_hook=c_hook)
 
-    dict_result = list(map(lambda traj: list(map(lambda pt: pt.as_dict(), traj)), result))
+    segments = result['segment']
+    clusters = result['cluster']
+    repr_lines = result['representative']
+
+    dict_result = list(map(lambda traj: list(map(lambda pt: pt.as_dict(), traj)), repr_lines))
     c2 = time.time()
+
+    #if p_hook:
+    #    p_hook(segments)
+
+    #if c_hook:
+    #    c_hook(clusters)
 
     with open(output_file, 'w') as write_file:
         json.dump(dict_result, write_file, indent=4)
