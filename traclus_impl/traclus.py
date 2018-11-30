@@ -6,9 +6,10 @@ Created on Jan 10, 2016
 from geometry import Point
 from geometry import LineSegment
 from generic_dbscan import dbscan
-from traclus_dbscan import TrajectoryLineSegmentFactory
-from traclus_dbscan import TrajectoryClusterFactory
-from traclus_dbscan import BestAvailableClusterCandidateIndex
+from trajectory import Trajectory
+from trajectory import TrajectoryLineSegmentFactory
+from trajectory import TrajectoryClusterFactory
+from trajectory import BestAvailableClusterCandidateIndex
 from trajectory_partitioning import call_partition_trajectory
 from line_segment_averaging import get_rline_pts
 
@@ -20,19 +21,20 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
     trajs = [[Point(**pt) for pt in traj] for traj in trajs]
     trajs = get_cleaned_trajectories(trajs)
     print('Number of trajectories after clean: {}'.format(len(trajs)))
+    trajs = [Trajectory(traj, tid) for tid, traj in enumerate(trajs)]
 
     # Partitioning
     cluster_candidates_tls = []
     traj_ls_list = []
     tls_factory = TrajectoryLineSegmentFactory()
-    for curr_tid, traj in enumerate(trajs):
-        good_indices = call_partition_trajectory(traj)
-        good_pts = filter_by_indices(good_indices, traj)
+    for traj in trajs:
+        good_indices = call_partition_trajectory(traj.pts)
+        good_pts = filter_by_indices(good_indices, traj.pts)
         ls_list = get_ls_list(good_pts)
         if len(ls_list) <= 0:
             raise Exception()
         for ls in ls_list:
-            tls = tls_factory.create(ls, curr_tid)
+            tls = tls_factory.create(ls, traj.tid)
             cluster_candidates_tls.append(tls)
         traj_ls_list.append([ls.as_dict() for ls in ls_list])
     
