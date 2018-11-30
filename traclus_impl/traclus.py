@@ -37,7 +37,8 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
         for ls in ls_list:
             tls = tls_factory.create(ls, traj.tid)
             cluster_candidates_tls.append(tls)
-    
+    print('Number of segments (cluster candidates) : {}'.format(len(cluster_candidates_tls)))
+
     # Clustering (DBSCAN)
     tls_index = BestAvailableClusterCandidateIndex(cluster_candidates_tls, eps)
     tcluster_factory = TrajectoryClusterFactory()

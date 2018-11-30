@@ -95,7 +95,7 @@ def check_output_parity(x):
         else:
             print('ERROR : ' + x + ' is not correct!')
     else:
-        print('ERROR : ' + x + ' not exist...')
+        print('ERROR : ' + y + ' not exist...')
 
 
 if __name__ == '__main__':
