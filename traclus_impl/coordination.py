@@ -3,7 +3,6 @@ Created on Jan 10, 2016
 
 @author: Alex
 '''
-import hooks
 from generic_dbscan import dbscan
 from line_segment_averaging import get_rline_from_traj_segments
 from traclus_dbscan import TrajectoryLineSegmentFactory
@@ -18,37 +17,33 @@ from trajectory_partitioning import get_line_segment_from_points
 # c_hook : clusters_hook
 
 def run_traclus(trajs, eps, min_lns, min_traj, \
-                min_vline, min_prev_dist,\
-                p_hook=hooks.partitioned_points_hook, c_hook=hooks.clusters_hook):
+                min_vline, min_prev_dist, p_hook=None, c_hook=None):
 
     trajs = get_cleaned_trajectories(trajs)
     tls_factory = TrajectoryLineSegmentFactory()
 
     # Partitioning
-    traj_line_segs = []
+    cluster_candidates = []
     for curr_tid, traj in enumerate(trajs):
 
         good_indices = call_partition_trajectory(traj)
         good_points = filter_by_indices(good_indices, traj)
         line_segments = get_consecutive_line_segments(good_points)
-        line_segments = map(lambda x: tls_factory.new_trajectory_line_seg(x, curr_tid), line_segments)
 
-        temp = 0
-        for traj_seg in line_segments:
-            traj_line_segs.append(traj_seg)
-            temp += 1
-        if temp <= 0:
+        if len(line_segments) <= 0:
             raise Exception()
-          
-    cluster_candidates = traj_line_segs
+
+        for segment in line_segments:
+            tls = tls_factory.create(segment, curr_tid)
+            cluster_candidates.append(tls)
     
+    if p_hook:
+        p_hook(cluster_candidates)
+
     # Clustering (DBSCAN)
     line_seg_index = BestAvailableClusterCandidateIndex(cluster_candidates, eps)
     clusters = dbscan(cluster_candidates_index=line_seg_index, min_neighbors=min_lns, \
                       cluster_factory=TrajectoryClusterFactory())
-
-    if p_hook:
-        p_hook(cluster_candidates)
     
     if c_hook:
         c_hook(clusters)

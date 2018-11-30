@@ -11,10 +11,10 @@ from representative_line_finding import get_average_vector
 from representative_line_finding import get_rotated_line_segment
 
 def get_rline_from_traj_segments(trajectory_line_segments, min_vline, min_prev_dist):
-    average_trajectory_vector = get_average_vector(line_segment_list=list(map(lambda x: x.line_segment, trajectory_line_segments)))
+    average_trajectory_vector = get_average_vector(line_segment_list=list(map(lambda x: x.segment, trajectory_line_segments)))
     
     for traj_line_seg in trajectory_line_segments:
-        traj_line_seg.line_segment = get_rotated_line_segment(traj_line_seg.line_segment, \
+        traj_line_seg.line_segment = get_rotated_line_segment(traj_line_seg.segment, \
                                                               - average_trajectory_vector.angle)
         
     representative_points = get_rline_from_rotated_segments(trajectory_line_segments=trajectory_line_segments, \

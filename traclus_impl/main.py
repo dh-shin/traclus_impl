@@ -82,7 +82,7 @@ def get_partitioned_hook(file_name):
         return None
 
     def func(output):
-        dict_trajs = list(map(lambda traj_line_seg: traj_line_seg.line_segment.as_dict(), output))
+        dict_trajs = list(map(lambda traj_line_seg: traj_line_seg.segment.as_dict(), output))
         with open(file_name, 'w') as write_file:
             json.dump(dict_trajs, write_file, indent=4)
         
@@ -98,7 +98,7 @@ def get_clusters_hook(file_name):
         all_cluster_line_segs = []
         for clust in clusters:
             line_segs = clust.get_trajectory_line_segments()
-            dict_output = list(map(lambda traj_line_seg: traj_line_seg.line_segment.as_dict(),
+            dict_output = list(map(lambda traj_line_seg: traj_line_seg.segment.as_dict(),
                               line_segs))
             all_cluster_line_segs.append(dict_output)
 
