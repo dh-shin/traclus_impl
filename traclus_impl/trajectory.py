@@ -44,6 +44,13 @@ class TrajectoryLineSegment(ClusterCandidate):
         self.tid = tid
         self.id = id
         self.num_neighbors = -1
+
+    def as_dict(self):
+        return {
+            'start': self.segment.start.as_dict(),
+            'end': self.segment.end.as_dict(),
+            'trajectory_id': self.tid
+        }
         
     def get_num_neighbors(self):
         if self.num_neighbors == -1:

@@ -20,7 +20,7 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
     # Cleaning
     trajs = [[Point(**pt) for pt in traj] for traj in trajs]
     trajs = get_cleaned_trajectories(trajs)
-    print('Number of trajectories after clean: {}'.format(len(trajs)))
+    print('Number of trajectories after clean : {}'.format(len(trajs)))
     trajs = [Trajectory(traj, tid) for tid, traj in enumerate(trajs)]
 
     # Partitioning
@@ -41,6 +41,7 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
     tls_index = BestAvailableClusterCandidateIndex(cluster_candidates_tls, eps)
     tcluster_factory = TrajectoryClusterFactory()
     tclusters = dbscan(tls_index, min_lns, tcluster_factory)
+    print('Number of clusters : {}'.format(len(tclusters)))
     
     # Representative line segments
     rline_pts_list = []
@@ -49,11 +50,12 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
             tls_list = tc.get_members()
             rline_pts = get_rline_pts(tls_list, min_vline, min_prev_dist)
             rline_pts_list.append(rline_pts)
+    print('Number of representative trajectories : {}'.format(len(rline_pts_list)))
             
     result = {
-        "partitioned_trajs": trajs,
-        "cluster": tclusters,
-        "representative": rline_pts_list
+        'partitioned_trajectories': trajs,
+        'clusters': tclusters,
+        'representative_trajectories': rline_pts_list
     }
     
     return result
