@@ -7,10 +7,10 @@ from distance_functions import get_total_distance_function
 from generic_dbscan import Cluster, ClusterCandidate, ClusterFactory, ClusterCandidateIndex
 
 class Trajectory():
-    def __init__(self, pts, id):
+    def __init__(self, pts, traj_id):
         self.pts = pts
         self.p_pts = []
-        self.tid = id
+        self.tid = traj_id
 
     def __repr__(self):
         return str(self.pts)
@@ -20,6 +20,17 @@ class Trajectory():
             'id': self.tid,
             'trajectories': [pt.as_dict() for pt in self.pts],
             'p_trajectories': [pt.as_dict() for pt in self.p_pts]
+        }
+
+class RepresentativeTrajectory():
+    def __init__(self, pts, cluster_id):
+        self.pts = pts
+        self.cid = cluster_id
+
+    def as_dict(self):
+        return {
+            'cluster_id': self.cid,
+            'trajectories': [pt.as_dict() for pt in self.pts],
         }
 
 class TrajectoryLineSegmentFactory():

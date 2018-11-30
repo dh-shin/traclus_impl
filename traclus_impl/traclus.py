@@ -10,6 +10,7 @@ from trajectory import Trajectory
 from trajectory import TrajectoryLineSegmentFactory
 from trajectory import TrajectoryClusterFactory
 from trajectory import BestAvailableClusterCandidateIndex
+from trajectory import RepresentativeTrajectory
 from trajectory_partitioning import call_partition_trajectory
 from line_segment_averaging import get_rline_pts
 
@@ -43,19 +44,20 @@ def run_traclus(trajs, eps, min_lns, min_traj, min_vline, min_prev_dist):
     tclusters = dbscan(tls_index, min_lns, tcluster_factory)
     print('Number of clusters : {}'.format(len(tclusters)))
     
-    # Representative line segments
-    rline_pts_list = []
+    # Representative trajectory
+    rtrajs = []
     for tc in tclusters:
         if tc.get_num_of_trajs() >= min_traj:
             tls_list = tc.get_members()
-            rline_pts = get_rline_pts(tls_list, min_vline, min_prev_dist)
-            rline_pts_list.append(rline_pts)
-    print('Number of representative trajectories : {}'.format(len(rline_pts_list)))
+            r_pts = get_rline_pts(tls_list, min_vline, min_prev_dist)
+            rtraj = RepresentativeTrajectory(r_pts, tc.cid)
+            rtrajs.append(rtraj)
+    print('Number of representative trajectories : {}'.format(len(rtrajs)))
             
     result = {
         'partitioned_trajectories': trajs,
         'clusters': tclusters,
-        'representative_trajectories': rline_pts_list
+        'representative_trajectories': rtrajs
     }
     
     return result

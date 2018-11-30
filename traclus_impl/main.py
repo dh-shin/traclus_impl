@@ -59,12 +59,12 @@ def main(input_file, output_file, p_file=None, c_file=None):
 
     p_trajs = result['partitioned_trajectories']
     tclusters = result['clusters']
-    repr_lines = result['representative_trajectories']
+    r_trajs = result['representative_trajectories']
 
     write_partitioned_trajectories(p_file, p_trajs)
     write_clusters(c_file, tclusters)
-    write_repr_lines(output_file, repr_lines)
-
+    write_representative_trajectories(output_file, r_trajs)
+    
     print('===============================================')
 
 def write_partitioned_trajectories(file_name, p_trajs):
@@ -81,8 +81,8 @@ def write_clusters(file_name, tclusters):
             json.dump(dict_result, write_file, indent=4)
         check_output_parity(file_name)     
 
-def write_repr_lines(file_name, repr_lines):
-    dict_result = [[pt.as_dict() for pt in pt_list] for pt_list in repr_lines]
+def write_representative_trajectories(file_name, r_trajs):
+    dict_result = [rtraj.as_dict() for rtraj in r_trajs]
     with open(file_name, 'w') as write_file:
         json.dump(dict_result, write_file, indent=4)
     check_output_parity(file_name)
