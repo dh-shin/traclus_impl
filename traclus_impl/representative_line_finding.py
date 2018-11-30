@@ -21,11 +21,11 @@ def get_average_vector(line_segment_list):
         
     return Vec2(total_x, total_y)
 
-def get_rotated_line_segment(line_segment, angle_in_degrees):
-    if angle_in_degrees > 90.0 or angle_in_degrees < -90.0:
-        raise Exception("trying to rotate line segment by an illegal number of degrees: " + str(angle_in_degrees))
+def get_rotated_segment(segment, angle_in_degrees):
+    if (angle_in_degrees > 90.0) or (angle_in_degrees < -90.0):
+        raise Exception("Illegal number of degrees: " + str(angle_in_degrees))
     
-    new_start = line_segment.start.rotated(angle_in_degrees)
-    new_end = line_segment.end.rotated(angle_in_degrees)
+    new_start = segment.start.rotated(angle_in_degrees)
+    new_end = segment.end.rotated(angle_in_degrees)
     
     return LineSegment.from_tuples((new_start.x, new_start.y), (new_end.x, new_end.y))

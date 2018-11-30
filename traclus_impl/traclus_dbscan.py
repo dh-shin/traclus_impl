@@ -24,6 +24,7 @@ class TrajectoryLineSegment(ClusterCandidate):
             raise Exception("invalid arguments")
 
         self.segment = segment
+        self.rsegment = None
         self.tid = tid
         self.id = id
         self.num_neighbors = -1
@@ -94,18 +95,16 @@ class TrajectoryCluster(Cluster):
     def __init__(self):
         Cluster.__init__(self)
         self.trajectories = set()
-        self.trajectory_count = 0
+           
+    def add_member(self, tls):
+        Cluster.add_member(self, tls)
+        if not (tls.tid in self.trajectories):
+            self.trajectories.add(tls.tid)
         
-    def add_member(self, item):
-        Cluster.add_member(self, item)
-        if not (item.tid in self.trajectories):
-            self.trajectory_count += 1
-            self.trajectories.add(item.tid)
-        
-    def num_trajectories_contained(self):
-        return self.trajectory_count
+    def get_num_of_trajs(self):
+        return len(self.trajectories)
     
-    def get_trajectory_line_segments(self):
+    def get_members(self):
         return self.members
     
 class TrajectoryClusterFactory(ClusterFactory):

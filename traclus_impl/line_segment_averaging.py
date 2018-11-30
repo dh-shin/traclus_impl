@@ -8,27 +8,19 @@ from geometry import Point
 from representative_trajectory_average_inputs import DECIMAL_MAX_DIFF_FOR_EQUALITY
 from representative_trajectory_average_inputs import get_representative_trajectory_average_inputs
 from representative_line_finding import get_average_vector
-from representative_line_finding import get_rotated_line_segment
+from representative_line_finding import get_rotated_segment
 
-def get_rline_from_traj_segments(trajectory_line_segments, min_vline, min_prev_dist):
-    average_trajectory_vector = get_average_vector(line_segment_list=list(map(lambda x: x.segment, trajectory_line_segments)))
-    
-    for traj_line_seg in trajectory_line_segments:
-        traj_line_seg.line_segment = get_rotated_line_segment(traj_line_seg.segment, \
-                                                              - average_trajectory_vector.angle)
-        
-    representative_points = get_rline_from_rotated_segments(trajectory_line_segments=trajectory_line_segments, \
-                                                            min_vline=min_vline, min_prev_dist=min_prev_dist)
-    return map(lambda x: x.rotated(angle_in_degrees=average_trajectory_vector.angle), representative_points)
-
-def get_rline_from_rotated_segments(trajectory_line_segments, min_vline, min_prev_dist):
-    inputs = get_representative_trajectory_average_inputs(trajectory_line_segments=trajectory_line_segments, \
-                                                          min_prev_dist=min_prev_dist, min_lines=min_vline)
-    out = []
+def get_rline_pts(tls_list, min_vline, min_prev_dist):
+    segments = list(map(lambda tls: tls.segment, tls_list))
+    avg_vec = get_average_vector(segments)
+    for tls in tls_list:
+        tls.rsegment = get_rotated_segment(tls.segment, -avg_vec.angle)
+    inputs = get_representative_trajectory_average_inputs(tls_list, min_vline, min_prev_dist)
+    rline_pts = []
     for line_seg_averaging_input in inputs:
         vert_val = get_mean_vertical_coordinate_in_line_segments(line_seg_averaging_input)
-        out.append(Point(line_seg_averaging_input['horizontal_position'], vert_val))
-    return out
+        rline_pts.append(Point(line_seg_averaging_input['horizontal_position'], vert_val))
+    return [pt.rotated(avg_vec.angle) for pt in rline_pts]
 
 def interpolate_within_line_segment(line_segment, horizontal_coordinate):
     min_x = min(line_segment.start.x, line_segment.end.x)

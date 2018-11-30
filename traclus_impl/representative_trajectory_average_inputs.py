@@ -10,29 +10,26 @@ from operator import attrgetter
 DECIMAL_MAX_DIFF_FOR_EQUALITY = 0.0000001
 
 class TrajectoryLineSegmentEndpoint:
-    def __init__(self, horizontal_position, line_segment, line_segment_id, list_node):
+    def __init__(self, horizontal_position, rsegment, rsegment_id, list_node):
         self.horizontal_position = horizontal_position
-        self.line_segment = line_segment
-        self.line_segment_id = line_segment_id
+        self.rsegment = rsegment
+        self.rsegment_id = rsegment_id
         self.list_node = list_node
 
-def get_sorted_line_seg_endpoints(trajectory_line_segments):
+def get_sorted_line_seg_endpoints(tls_list):
     line_segment_endpoints = []
     cur_id = 0
-
-    for traj_segment in trajectory_line_segments:
-        list_node = LinkedListNode(traj_segment)
-        line_segment_endpoints.append(TrajectoryLineSegmentEndpoint(traj_segment.line_segment.start.x, \
-                                                                    traj_segment, cur_id, list_node))
-        line_segment_endpoints.append(TrajectoryLineSegmentEndpoint(traj_segment.line_segment.end.x, \
-                                                                    traj_segment, cur_id, list_node))
+    for tls in tls_list:
+        list_node = LinkedListNode(tls)
+        e1 = TrajectoryLineSegmentEndpoint(tls.rsegment.start.x, tls, cur_id, list_node)
+        e2 = TrajectoryLineSegmentEndpoint(tls.rsegment.end.x, tls, cur_id, list_node)
+        line_segment_endpoints.append(e1)
+        line_segment_endpoints.append(e2)
         cur_id += 1
-        
     return sorted(line_segment_endpoints, key=attrgetter('horizontal_position'))
 
 def numbers_within(a, b, max_diff):
     return abs(a - b) <= max_diff
-    
 
 def possibly_append_to_active_list(active_list, out, prev_pos, min_prev_dist, min_lines):
     if (len(out) == 0 or prev_pos - out[len(out) - 1]['horizontal_position'] >= min_prev_dist) and len(active_list) >= min_lines:
@@ -41,7 +38,7 @@ def possibly_append_to_active_list(active_list, out, prev_pos, min_prev_dist, mi
         tmp  = active_list.head
         while tmp:
             if tmp.item:
-                line_list.append(tmp.item.line_segment)
+                line_list.append(tmp.item.rsegment)
             tmp = tmp.next
             if tmp == active_list.head:
                 break
@@ -74,14 +71,14 @@ def remove_duplicate_points_from_adjacent_lines_of_same_trajectories(active_list
             
     delete_list[:] = deletion_keeper_list
 
-def get_representative_trajectory_average_inputs(trajectory_line_segments, min_lines, min_prev_dist):
-    cur_active = [False] * len(trajectory_line_segments)
+def get_representative_trajectory_average_inputs(tls_list, min_lines, min_prev_dist):
+    cur_active = [False] * len(tls_list)
     active_list = LinkedList()        
     insert_list = [] 
     delete_list = []
     out = []
     
-    line_segment_endpoints = get_sorted_line_seg_endpoints(trajectory_line_segments)
+    line_segment_endpoints = get_sorted_line_seg_endpoints(tls_list)
         
     i = 0
     while i < len(line_segment_endpoints):
@@ -91,12 +88,12 @@ def get_representative_trajectory_average_inputs(trajectory_line_segments, min_l
         
         while i < len(line_segment_endpoints) and numbers_within(line_segment_endpoints[i].horizontal_position, \
                                                                  prev_pos, DECIMAL_MAX_DIFF_FOR_EQUALITY):
-            if not cur_active[line_segment_endpoints[i].line_segment_id]:
+            if not cur_active[line_segment_endpoints[i].rsegment_id]:
                 insert_list.append(line_segment_endpoints[i])
-                cur_active[line_segment_endpoints[i].line_segment_id] = True
-            elif cur_active[line_segment_endpoints[i].line_segment_id]:
+                cur_active[line_segment_endpoints[i].rsegment_id] = True
+            elif cur_active[line_segment_endpoints[i].rsegment_id]:
                 delete_list.append(line_segment_endpoints[i])
-                cur_active[line_segment_endpoints[i].line_segment_id] = False
+                cur_active[line_segment_endpoints[i].rsegment_id] = False
             i += 1
             
         for line_seg_endpoint in insert_list:

@@ -3,10 +3,11 @@ Created on Jan 7, 2016
 
 @author: Alex
 '''
-from geometry import LineSegment
-from distance_functions import perpendicular_distance, \
-angular_distance
 import math
+
+from geometry import LineSegment
+from distance_functions import perpendicular_distance
+from distance_functions import angular_distance
 from mutable_float import MutableFloat
 from representative_trajectory_average_inputs import DECIMAL_MAX_DIFF_FOR_EQUALITY
 
@@ -90,26 +91,3 @@ def encoding_cost(trajectory_line_segs, low, high,
         
     return math.log(total_angular + DISTANCE_OFFSET, 2) + \
         math.log(total_perp + DISTANCE_OFFSET, 2)
-
-
-
-def get_line_segment_from_points(point_a, point_b):
-    return LineSegment(point_a, point_b)
-
-def get_trajectory_line_segment_iterator_adapter(iterator_getter, get_line_segment_from_points_func):
-    def _func(list, low, high, get_line_segment_from_points_func=get_line_segment_from_points_func):
-        iterator_getter(list, low, high, get_line_segment_from_points_func)
-    return _func 
-
-def get_trajectory_line_segment_iterator(list, low, high, get_line_segment_from_points_func):
-    if high <= low:
-        raise Exception("high must be greater than low index")
-    
-    line_segs = []
-    cur_pos = low
-        
-    while cur_pos < high:
-        line_segs.append(get_line_segment_from_points_func(list[cur_pos], list[cur_pos + 1]))
-        cur_pos += 1
-            
-    return line_segs

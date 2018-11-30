@@ -32,8 +32,7 @@ from coordination import run_traclus
 
 def main(input_file, output_file, p_file=None, c_file=None):
     print('===============================================')
-    c1 = time.time()
-
+    
     parsed_input = None
     with open(input_file, 'r') as read_file:
         parsed_input = json.load(read_file)
@@ -46,68 +45,53 @@ def main(input_file, output_file, p_file=None, c_file=None):
     trajs = list(map(lambda traj: list(map(lambda pt: Point(**pt), traj)), parsed_input['trajectories']))
     print('Number of input trajectories : {}'.format(len(trajs)))
 
-    p_hook = get_partitioned_hook(p_file)
-    c_hook = get_clusters_hook(c_file)
+    c1 = time.time()
 
     result = run_traclus(trajs=trajs, eps=parsed_input['epsilon'], 
                         min_lns=parsed_input['min_neighbors'],
                         min_traj=parsed_input['min_num_trajectories_in_cluster'],
                         min_vline=parsed_input['min_vertical_lines'],
-                        min_prev_dist=parsed_input['min_prev_dist'],
-                        p_hook=p_hook, c_hook=c_hook)
+                        min_prev_dist=parsed_input['min_prev_dist'])   
+    c2 = time.time()
 
-    segments = result['segment']
+    all_tls = result['all_tls']
+    traj_ls_list = result['traj_ls']
     clusters = result['cluster']
     repr_lines = result['representative']
 
-    dict_result = list(map(lambda traj: list(map(lambda pt: pt.as_dict(), traj)), repr_lines))
-    c2 = time.time()
+    write_all_tls(p_file, all_tls)
+    write_clusters(c_file, clusters)
+    write_repr_lines(output_file, repr_lines)
 
-    #if p_hook:
-    #    p_hook(segments)
-
-    #if c_hook:
-    #    c_hook(clusters)
-
-    with open(output_file, 'w') as write_file:
-        json.dump(dict_result, write_file, indent=4)
-    
-    check_file_sameness(output_file)
+    with open("trajectory_segments.json", 'w') as write_file:
+        json.dump(traj_ls_list, write_file, indent=4)
 
     print('elapsed time : %f' % (c2 - c1))
     print('===============================================')
 
-def get_partitioned_hook(file_name):
-    if not file_name:
-        return None
-
-    def func(output):
-        dict_trajs = list(map(lambda traj_line_seg: traj_line_seg.segment.as_dict(), output))
+def write_all_tls(file_name, tls_list):
+    if file_name:
+        dict_output = list(map(lambda tls: tls.segment.as_dict(), tls_list))
         with open(file_name, 'w') as write_file:
-            json.dump(dict_trajs, write_file, indent=4)
-        
+            json.dump(dict_output, write_file, indent=4)    
         check_file_sameness(file_name)
 
-    return func
-
-def get_clusters_hook(file_name):
-    if not file_name:
-        return None
-
-    def func(clusters):
-        all_cluster_line_segs = []
-        for clust in clusters:
-            line_segs = clust.get_trajectory_line_segments()
-            dict_output = list(map(lambda traj_line_seg: traj_line_seg.segment.as_dict(),
-                              line_segs))
-            all_cluster_line_segs.append(dict_output)
-
+def write_clusters(file_name, clusters):
+    if file_name:
+        all_cluster_segments = []
+        for cluster in clusters:
+            tls_list = cluster.get_members()
+            dict_output = list(map(lambda tls: tls.segment.as_dict(), tls_list))
+            all_cluster_segments.append(dict_output)
         with open(file_name, 'w') as write_file:
-            json.dump(all_cluster_line_segs, write_file, indent=4)
-
+            json.dump(all_cluster_segments, write_file, indent=4)
         check_file_sameness(file_name)
 
-    return func
+def write_repr_lines(file_name, repr_lines):
+    dict_result = [[pt.as_dict() for pt in pt_list] for pt_list in repr_lines]
+    with open(file_name, 'w') as write_file:
+        json.dump(dict_result, write_file, indent=4)
+    check_file_sameness(file_name)
 
 def check_file_sameness(x):
     y = x + '.org'

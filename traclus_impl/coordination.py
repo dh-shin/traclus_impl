@@ -3,63 +3,54 @@ Created on Jan 10, 2016
 
 @author: Alex
 '''
+from geometry import LineSegment
 from generic_dbscan import dbscan
-from line_segment_averaging import get_rline_from_traj_segments
 from traclus_dbscan import TrajectoryLineSegmentFactory
 from traclus_dbscan import TrajectoryClusterFactory
 from traclus_dbscan import BestAvailableClusterCandidateIndex
 from trajectory_partitioning import call_partition_trajectory
-from trajectory_partitioning import get_line_segment_from_points
+from line_segment_averaging import get_rline_pts
 
 # min_traj : minimum number of trajectories in cluster
 # min_vline : minimum number of vertical lines
-# p_hook : partitioned_points_hook
-# c_hook : clusters_hook
 
 def run_traclus(trajs, eps, min_lns, min_traj, \
-                min_vline, min_prev_dist, p_hook=None, c_hook=None):
+                min_vline, min_prev_dist):
 
     trajs = get_cleaned_trajectories(trajs)
     tls_factory = TrajectoryLineSegmentFactory()
 
     # Partitioning
     cluster_candidates = []
+    traj_ls_list = []
     for curr_tid, traj in enumerate(trajs):
-
         good_indices = call_partition_trajectory(traj)
         good_points = filter_by_indices(good_indices, traj)
-        line_segments = get_consecutive_line_segments(good_points)
-
-        if len(line_segments) <= 0:
+        ls_list = get_ls_list(good_points)
+        if len(ls_list) <= 0:
             raise Exception()
-
-        for segment in line_segments:
-            tls = tls_factory.create(segment, curr_tid)
+        for ls in ls_list:
+            tls = tls_factory.create(ls, curr_tid)
             cluster_candidates.append(tls)
+        traj_ls_list.append([ls.as_dict() for ls in ls_list])
     
-    if p_hook:
-        p_hook(cluster_candidates)
-
     # Clustering (DBSCAN)
     line_seg_index = BestAvailableClusterCandidateIndex(cluster_candidates, eps)
-    clusters = dbscan(cluster_candidates_index=line_seg_index, min_neighbors=min_lns, \
-                      cluster_factory=TrajectoryClusterFactory())
+    clusters = dbscan(line_seg_index, min_lns, TrajectoryClusterFactory())
     
-    if c_hook:
-        c_hook(clusters)
-
     # Representative line segments
-    rep_lines = []
+    rline_pts_list = []
     for traj_cluster in clusters:
-        if traj_cluster.num_trajectories_contained() >= min_traj:
-            trajectory_line_segs = traj_cluster.get_trajectory_line_segments()
-            rline = get_rline_from_traj_segments(trajectory_line_segs, min_vline, min_prev_dist)
-            rep_lines.append(rline)
+        if traj_cluster.get_num_of_trajs() >= min_traj:
+            tls_list = traj_cluster.get_members()
+            rline_pts = get_rline_pts(tls_list, min_vline, min_prev_dist)
+            rline_pts_list.append(rline_pts)
             
     result = {
-        "segment": cluster_candidates,
+        "all_tls": cluster_candidates,
+        "traj_ls": traj_ls_list,
         "cluster": clusters,
-        "representative": rep_lines
+        "representative": rline_pts_list
     }
     
     return result
@@ -117,22 +108,22 @@ def with_spikes_removed(traj):
     spikes_removed.append(traj[cur_index])
     return spikes_removed
 
-def get_consecutive_line_segments(items):
+def get_ls_list(pts):
     
     # emptyness check
-    if not items:
-        raise ValueError("items doesn't have any values")
+    if not pts:
+        raise ValueError("pts doesn't have any values")
 
     # size check
-    if len(items) < 2:
-        raise ValueError("items didn't have at least two items")
+    if len(pts) < 2:
+        raise ValueError("pts didn't have at least two points")
 
-    out_vals = []
-    last_item = None
-    for item in items:
-        if last_item is not None:
-            line_seg = get_line_segment_from_points(last_item, item)
-            out_vals.append(line_seg)
-        last_item = item
+    ls_list = []
+    last_pt = None
+    for pt in pts:
+        if last_pt is not None:
+            ls = LineSegment(last_pt, pt)
+            ls_list.append(ls)
+        last_pt = pt
         
-    return out_vals
+    return ls_list
